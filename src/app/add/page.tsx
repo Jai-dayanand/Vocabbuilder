@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Plus, BookOpen, Type, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, BookOpen, Type, FileText, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -150,6 +150,18 @@ export default function AddWordPage() {
                       Cancel
                     </Button>
                   </Link>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-3">Need to add multiple words?</p>
+                    <Link href="/upload">
+                      <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                        <Upload className="h-4 w-4 mr-2" />
+                        Try Bulk Import
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </form>
 

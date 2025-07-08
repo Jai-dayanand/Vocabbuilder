@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, Plus, LogOut, Trash2, User } from 'lucide-react';
+import { BookOpen, Search, Plus, LogOut, Trash2, User, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { 
   collection, 
@@ -122,6 +122,12 @@ export default function HomePage() {
                   <Button className="bg-green-600 hover:bg-green-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Add Word
+                  </Button>
+                </Link>
+                <Link href="/upload">
+                  <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Bulk Import
                   </Button>
                 </Link>
                 <Button 
