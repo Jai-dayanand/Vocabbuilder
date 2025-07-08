@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -9,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Plus, Brain, Type, FileText, Upload, Sparkles } from 'lucide-react';
+import { ArrowLeft, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 export default function AddWordPage() {
@@ -19,14 +19,49 @@ export default function AddWordPage() {
   const [definition, setDefinition] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [existingWords, setExistingWords] = useState<string[]>([]);
   const { user } = useAuth();
   const router = useRouter();
 
+  // Load existing words to check for duplicates
+  useEffect(() => {
+    if (!user) return;
+
+    const loadExistingWords = async () => {
+      try {
+        const q = query(
+          collection(db, 'gre_words'),
+          where('userId', '==', user.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const words = querySnapshot.docs.map(doc => doc.data().word.toLowerCase().trim());
+        setExistingWords(words);
+      } catch (error) {
+        console.error('Error loading existing words:', error);
+      }
+    };
+
+    loadExistingWords();
+  }, [user]);
+
+  // Check for duplicates when word changes
+  useEffect(() => {
+    if (word.trim()) {
+      const normalizedWord = word.toLowerCase().trim();
+      setIsDuplicate(existingWords.includes(normalizedWord));
+    } else {
+      setIsDuplicate(false);
+    }
+  }, [word, existingWords]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || isDuplicate) return;
     
     setLoading(true);
+    setError('');
 
     try {
       await addDoc(collection(db, 'gre_words'), {
@@ -46,6 +81,7 @@ export default function AddWordPage() {
       }, 2000);
     } catch (error) {
       console.error('Error adding word:', error);
+      setError('Failed to add word. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -53,146 +89,144 @@ export default function AddWordPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Animated Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -inset-10 opacity-50">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-            <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-          </div>
+      <div className="min-h-screen bg-black text-white">
+        {/* Minimal geometric background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
         </div>
 
         {/* Header */}
-        <div className="relative z-10 bg-white/10 backdrop-blur-xl border-b border-white/20">
-          <div className="max-w-4xl mx-auto px-6 py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-white/10">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Vocabulary
-                </Button>
-              </Link>
-            </div>
+        <div className="relative z-10 border-b border-white/10 bg-black/80 backdrop-blur-sm">
+          <div className="max-w-4xl mx-auto px-6 py-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                BACK
+              </Button>
+            </Link>
           </div>
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
+        <div className="relative z-10 max-w-4xl mx-auto px-6 py-12">
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full blur opacity-75 animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 p-6 rounded-full">
-                  <Plus className="h-12 w-12 text-white" />
-                </div>
-              </div>
+            <div className="w-12 h-12 bg-white rounded-sm mx-auto mb-6 flex items-center justify-center">
+              <Plus className="h-6 w-6 text-black" />
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-200 to-teal-200 bg-clip-text text-transparent mb-4">
-              Add New GRE Word
+            <h1 className="text-3xl font-bold uppercase tracking-wider mb-4">
+              ADD NEW WORD
             </h1>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
-              Expand your vocabulary arsenal with a powerful new word and definition
+            <p className="text-white/60 max-w-2xl mx-auto">
+              Expand your GRE vocabulary with a new word and definition
             </p>
           </div>
 
-          <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl">
+          {success && (
+            <div className="mb-8 p-6 border border-green-500/30 bg-green-500/10 text-green-400">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="h-6 w-6" />
+                <div>
+                  <p className="font-bold">Word added successfully!</p>
+                  <p className="text-green-300">Redirecting to vocabulary list...</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Card className="border-white/10 bg-white/5">
             <CardHeader className="text-center pb-6">
-              <CardTitle className="text-3xl text-white flex items-center justify-center">
-                <Brain className="h-8 w-8 mr-3 text-purple-400" />
-                New Vocabulary Entry
+              <CardTitle className="text-2xl text-white uppercase tracking-wider">
+                NEW VOCABULARY ENTRY
               </CardTitle>
-              <CardDescription className="text-lg text-gray-300">
-                Add a GRE word with its definition to your personal collection
+              <CardDescription className="text-white/60">
+                Add a GRE word with its definition to your collection
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
-              {success && (
-                <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-300 px-6 py-4 rounded-xl mb-8 text-center backdrop-blur-sm">
-                  <div className="flex items-center justify-center space-x-3">
-                    <Sparkles className="h-6 w-6" />
-                    <div>
-                      <p className="font-bold text-lg">Word added successfully!</p>
-                      <p className="text-emerald-200">Redirecting to your vocabulary list...</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
-                  <Label htmlFor="word" className="text-lg font-medium text-gray-200 flex items-center">
-                    <Type className="h-5 w-5 mr-2 text-purple-400" />
-                    Word
+                  <Label htmlFor="word" className="text-sm font-medium text-white/80 uppercase tracking-wider">
+                    WORD
                   </Label>
                   <Input
                     id="word"
                     type="text"
-                    placeholder="Enter the GRE word (e.g., Abate)"
+                    placeholder="Enter the GRE word"
                     value={word}
                     onChange={(e) => setWord(e.target.value)}
-                    className="text-xl py-6 bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm"
+                    className={`bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10 ${
+                      isDuplicate ? 'border-red-500/50 bg-red-500/10' : ''
+                    }`}
                     required
                   />
-                  <p className="text-sm text-gray-400">The vocabulary word you want to master</p>
+                  {isDuplicate && (
+                    <div className="flex items-center space-x-2 text-red-400 text-sm">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>This word already exists in your vocabulary</span>
+                    </div>
+                  )}
+                  <p className="text-xs text-white/40 uppercase tracking-wider">
+                    The vocabulary word you want to master
+                  </p>
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="definition" className="text-lg font-medium text-gray-200 flex items-center">
-                    <FileText className="h-5 w-5 mr-2 text-blue-400" />
-                    Definition
+                  <Label htmlFor="definition" className="text-sm font-medium text-white/80 uppercase tracking-wider">
+                    DEFINITION
                   </Label>
                   <Textarea
                     id="definition"
-                    placeholder="Enter the definition (e.g., To reduce in intensity or amount)"
+                    placeholder="Enter the definition"
                     value={definition}
                     onChange={(e) => setDefinition(e.target.value)}
-                    className="min-h-[140px] text-lg bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm resize-none"
+                    className="min-h-[120px] bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10 resize-none"
                     required
                   />
-                  <p className="text-sm text-gray-400">A clear and comprehensive definition of the word</p>
+                  <p className="text-xs text-white/40 uppercase tracking-wider">
+                    A clear and comprehensive definition
+                  </p>
                 </div>
+
+                {error && (
+                  <div className="p-4 border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
+                    {error}
+                  </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <Button
                     type="submit"
-                    disabled={loading || !word.trim() || !definition.trim()}
-                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-6 text-xl font-bold shadow-2xl shadow-emerald-500/25 border-0"
+                    disabled={loading || !word.trim() || !definition.trim() || isDuplicate}
+                    className="flex-1 bg-white text-black hover:bg-white/90 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        Adding Word...
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                        ADDING...
                       </>
                     ) : (
                       <>
-                        <Plus className="h-6 w-6 mr-3" />
-                        Add to Vocabulary
+                        <Plus className="h-4 w-4 mr-2" />
+                        ADD TO VOCABULARY
                       </>
                     )}
                   </Button>
                   
                   <Link href="/" className="flex-1">
-                    <Button variant="outline" className="w-full py-6 text-xl border-gray-500 text-gray-300 hover:bg-white/10 hover:text-white bg-white/5 backdrop-blur-sm">
-                      Cancel
+                    <Button variant="outline" className="w-full border-white/20 text-white hover:bg-white/10">
+                      CANCEL
                     </Button>
                   </Link>
                 </div>
               </form>
 
-              <div className="mt-12 pt-8 border-t border-white/20">
-                <div className="text-center mb-6">
-                  <p className="text-gray-300 mb-4">Need to add multiple words?</p>
-                  <Link href="/upload">
-                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg shadow-purple-500/25 border-0">
-                      <Upload className="h-5 w-5 mr-2" />
-                      Try Bulk Import
-                    </Button>
-                  </Link>
-                </div>
-                
-                <div className="flex items-center justify-center space-x-3 text-gray-400">
-                  <Brain className="h-5 w-5" />
-                  <span>Building your GRE vocabulary one word at a time</span>
+              <div className="mt-12 pt-8 border-t border-white/10">
+                <div className="text-center">
+                  <p className="text-white/40 text-xs uppercase tracking-wider">
+                    Building your GRE vocabulary • {existingWords.length} words collected
+                  </p>
                 </div>
               </div>
             </CardContent>

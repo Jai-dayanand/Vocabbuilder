@@ -1,19 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, Download, Brain, Sparkles, Zap } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, CheckCircle, AlertCircle, Download, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { collection, addDoc, serverTimestamp, writeBatch, doc } from 'firebase/firestore';
+import { collection, writeBatch, doc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface WordData {
   word: string;
   definition: string;
+}
+
+interface ProcessedData {
+  valid: WordData[];
+  duplicates: string[];
+  invalid: any[];
 }
 
 export default function UploadPage() {
@@ -22,10 +28,33 @@ export default function UploadPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<WordData[]>([]);
+  const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [uploadedCount, setUploadedCount] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [existingWords, setExistingWords] = useState<string[]>([]);
   const { user } = useAuth();
   const router = useRouter();
+
+  // Load existing words to check for duplicates
+  useEffect(() => {
+    if (!user) return;
+
+    const loadExistingWords = async () => {
+      try {
+        const q = query(
+          collection(db, 'gre_words'),
+          where('userId', '==', user.uid)
+        );
+        const querySnapshot = await getDocs(q);
+        const words = querySnapshot.docs.map(doc => doc.data().word.toLowerCase().trim());
+        setExistingWords(words);
+      } catch (error) {
+        console.error('Error loading existing words:', error);
+      }
+    };
+
+    loadExistingWords();
+  }, [user]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -54,36 +83,66 @@ export default function UploadPage() {
     }
   };
 
+  const processJsonData = (jsonData: any[]): ProcessedData => {
+    const valid: WordData[] = [];
+    const duplicates: string[] = [];
+    const invalid: any[] = [];
+
+    jsonData.forEach(item => {
+      if (item && typeof item === 'object' && 
+          typeof item.word === 'string' && 
+          typeof item.definition === 'string' &&
+          item.word.trim() && item.definition.trim()) {
+        
+        const normalizedWord = item.word.trim().toLowerCase();
+        
+        // Check if it's a duplicate
+        if (existingWords.includes(normalizedWord) || 
+            valid.some(w => w.word.toLowerCase() === normalizedWord)) {
+          duplicates.push(item.word.trim());
+        } else {
+          valid.push({
+            word: item.word.trim(),
+            definition: item.definition.trim()
+          });
+        }
+      } else {
+        invalid.push(item);
+      }
+    });
+
+    return { valid, duplicates, invalid };
+  };
+
   const handleFileSelection = (selectedFile: File) => {
     setFile(selectedFile);
     setError('');
     setPreview([]);
+    setProcessedData(null);
     
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const jsonData = JSON.parse(event.target?.result as string);
         
-        if (Array.isArray(jsonData)) {
-          const validWords = jsonData.filter(item => 
-            item && typeof item === 'object' && 
-            typeof item.word === 'string' && 
-            typeof item.definition === 'string' &&
-            item.word.trim() && item.definition.trim()
-          );
-          
-          if (validWords.length === 0) {
-            setError('No valid word entries found. Each entry must have "word" and "definition" fields.');
-            return;
-          }
-          
-          setPreview(validWords.slice(0, 5));
-          
-          if (validWords.length !== jsonData.length) {
-            setError(`Found ${validWords.length} valid entries out of ${jsonData.length} total entries.`);
-          }
-        } else {
+        if (!Array.isArray(jsonData)) {
           setError('JSON must be an array of word objects.');
+          return;
+        }
+
+        const processed = processJsonData(jsonData);
+        setProcessedData(processed);
+        setPreview(processed.valid.slice(0, 5));
+        
+        if (processed.duplicates.length > 0 || processed.invalid.length > 0) {
+          let errorMsg = '';
+          if (processed.duplicates.length > 0) {
+            errorMsg += `${processed.duplicates.length} duplicate words will be skipped. `;
+          }
+          if (processed.invalid.length > 0) {
+            errorMsg += `${processed.invalid.length} invalid entries found.`;
+          }
+          setError(errorMsg);
         }
       } catch (err) {
         setError('Invalid JSON file. Please check the format.');
@@ -93,63 +152,43 @@ export default function UploadPage() {
   };
 
   const handleUpload = async () => {
-    if (!file || !user) return;
+    if (!file || !user || !processedData) return;
     
     setUploading(true);
     setError('');
     
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const jsonData = JSON.parse(event.target?.result as string);
-          
-          if (!Array.isArray(jsonData)) {
-            throw new Error('JSON must be an array of word objects.');
-          }
-          
-          const validWords = jsonData.filter(item => 
-            item && typeof item === 'object' && 
-            typeof item.word === 'string' && 
-            typeof item.definition === 'string' &&
-            item.word.trim() && item.definition.trim()
-          );
-          
-          if (validWords.length === 0) {
-            throw new Error('No valid word entries found.');
-          }
-          
-          const batch = writeBatch(db);
-          const wordsRef = collection(db, 'gre_words');
-          
-          validWords.forEach((wordData) => {
-            const docRef = doc(wordsRef);
-            batch.set(docRef, {
-              word: wordData.word.trim(),
-              definition: wordData.definition.trim(),
-              userId: user.uid,
-              createdAt: serverTimestamp()
-            });
-          });
-          
-          await batch.commit();
-          
-          setUploadedCount(validWords.length);
-          setSuccess(true);
-          
-          setTimeout(() => {
-            router.push('/');
-          }, 3000);
-          
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to upload words');
-        } finally {
-          setUploading(false);
-        }
-      };
-      reader.readAsText(file);
+      const { valid } = processedData;
+      
+      if (valid.length === 0) {
+        throw new Error('No valid words to upload.');
+      }
+      
+      const batch = writeBatch(db);
+      const wordsRef = collection(db, 'gre_words');
+      
+      valid.forEach((wordData) => {
+        const docRef = doc(wordsRef);
+        batch.set(docRef, {
+          word: wordData.word,
+          definition: wordData.definition,
+          userId: user.uid,
+          createdAt: serverTimestamp()
+        });
+      });
+      
+      await batch.commit();
+      
+      setUploadedCount(valid.length);
+      setSuccess(true);
+      
+      setTimeout(() => {
+        router.push('/');
+      }, 3000);
+      
     } catch (err) {
-      setError('Failed to process file');
+      setError(err instanceof Error ? err.message : 'Failed to upload words');
+    } finally {
       setUploading(false);
     }
   };
@@ -175,78 +214,62 @@ export default function UploadPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        {/* Animated Background */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -inset-10 opacity-50">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-            <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-          </div>
+      <div className="min-h-screen bg-black text-white">
+        {/* Minimal geometric background */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+          <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
         </div>
 
         {/* Header */}
-        <div className="relative z-10 bg-white/10 backdrop-blur-xl border-b border-white/20">
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <div className="flex items-center space-x-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-white/10">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Vocabulary
-                </Button>
-              </Link>
-            </div>
+        <div className="relative z-10 border-b border-white/10 bg-black/80 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                BACK
+              </Button>
+            </Link>
           </div>
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full blur opacity-75 animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-full">
-                  <Upload className="h-12 w-12 text-white" />
-                </div>
-              </div>
+            <div className="w-12 h-12 bg-white rounded-sm mx-auto mb-6 flex items-center justify-center">
+              <Upload className="h-6 w-6 text-black" />
             </div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent mb-4">
-              Bulk Import Vocabulary
+            <h1 className="text-3xl font-bold uppercase tracking-wider mb-4">
+              BULK IMPORT
             </h1>
-            <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Supercharge your GRE preparation by importing hundreds of vocabulary words instantly
+            <p className="text-white/60 max-w-3xl mx-auto">
+              Import multiple vocabulary words from a JSON file
             </p>
           </div>
 
           {success && (
-            <Card className="mb-8 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border-emerald-500/30 backdrop-blur-xl">
-              <CardContent className="p-8">
-                <div className="flex items-center space-x-4 text-emerald-300">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-emerald-500 rounded-full blur opacity-50"></div>
-                    <div className="relative bg-emerald-500 p-2 rounded-full">
-                      <CheckCircle className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">Upload Successful!</p>
-                    <p className="text-emerald-200 text-lg">
-                      Successfully imported {uploadedCount} words to your vocabulary. Redirecting...
-                    </p>
-                  </div>
+            <div className="mb-8 p-6 border border-green-500/30 bg-green-500/10 text-green-400">
+              <div className="flex items-center space-x-4">
+                <CheckCircle className="h-8 w-8" />
+                <div>
+                  <p className="text-xl font-bold">Upload Successful!</p>
+                  <p className="text-green-300">
+                    Successfully imported {uploadedCount} words. Redirecting...
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {/* Upload Section */}
-            <Card className="bg-white/10 backdrop-blur-xl border-white/20">
+            <Card className="border-white/10 bg-white/5">
               <CardHeader className="text-center pb-6">
-                <CardTitle className="text-3xl text-white flex items-center justify-center mb-2">
-                  <FileText className="h-8 w-8 mr-3 text-purple-400" />
-                  Upload JSON File
+                <CardTitle className="text-2xl text-white uppercase tracking-wider">
+                  UPLOAD JSON FILE
                 </CardTitle>
-                <CardDescription className="text-lg text-gray-300">
+                <CardDescription className="text-white/60">
                   Drag and drop or click to select your vocabulary file
                 </CardDescription>
               </CardHeader>
@@ -254,10 +277,10 @@ export default function UploadPage() {
                 <div className="space-y-8">
                   {/* File Drop Zone */}
                   <div 
-                    className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
+                    className={`relative border-2 border-dashed rounded-sm p-12 text-center transition-all duration-300 ${
                       dragActive 
-                        ? 'border-purple-400 bg-purple-500/20 scale-105' 
-                        : 'border-gray-500 hover:border-purple-400 hover:bg-white/5'
+                        ? 'border-white bg-white/10' 
+                        : 'border-white/20 hover:border-white/40 hover:bg-white/5'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
@@ -273,70 +296,93 @@ export default function UploadPage() {
                     />
                     
                     <div className="relative">
-                      <div className="flex items-center justify-center mb-6">
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-purple-500 rounded-full blur opacity-50"></div>
-                          <div className="relative bg-gradient-to-r from-purple-500 to-pink-500 p-4 rounded-full">
-                            <Upload className="h-12 w-12 text-white" />
-                          </div>
-                        </div>
+                      <div className="w-12 h-12 bg-white/10 rounded-sm mx-auto mb-6 flex items-center justify-center">
+                        <Upload className="h-6 w-6 text-white/60" />
                       </div>
                       
-                      <p className="text-2xl font-bold text-white mb-3">
-                        {file ? file.name : 'Drop your JSON file here'}
+                      <p className="text-xl font-bold text-white mb-3 uppercase tracking-wider">
+                        {file ? file.name : 'DROP JSON FILE'}
                       </p>
-                      <p className="text-gray-300 text-lg">
+                      <p className="text-white/60">
                         {file ? 'File ready for upload' : 'or click to browse files'}
                       </p>
-                      
-                      {dragActive && (
-                        <div className="absolute inset-0 bg-purple-500/20 rounded-2xl flex items-center justify-center">
-                          <p className="text-white text-xl font-bold">Drop it like it's hot! 🔥</p>
-                        </div>
-                      )}
                     </div>
                   </div>
 
+                  {/* Processing Results */}
+                  {processedData && (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div className="border border-green-500/30 bg-green-500/10 p-4">
+                          <p className="text-2xl font-bold text-green-400">{processedData.valid.length}</p>
+                          <p className="text-xs text-green-300 uppercase tracking-wider">VALID</p>
+                        </div>
+                        <div className="border border-yellow-500/30 bg-yellow-500/10 p-4">
+                          <p className="text-2xl font-bold text-yellow-400">{processedData.duplicates.length}</p>
+                          <p className="text-xs text-yellow-300 uppercase tracking-wider">DUPLICATES</p>
+                        </div>
+                        <div className="border border-red-500/30 bg-red-500/10 p-4">
+                          <p className="text-2xl font-bold text-red-400">{processedData.invalid.length}</p>
+                          <p className="text-xs text-red-300 uppercase tracking-wider">INVALID</p>
+                        </div>
+                      </div>
+                      
+                      {processedData.duplicates.length > 0 && (
+                        <div className="p-4 border border-yellow-500/30 bg-yellow-500/10 text-yellow-400">
+                          <div className="flex items-start space-x-3">
+                            <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-bold text-sm uppercase tracking-wider">DUPLICATES FOUND</p>
+                              <p className="text-yellow-300 text-sm">
+                                {processedData.duplicates.slice(0, 3).join(', ')}
+                                {processedData.duplicates.length > 3 && ` and ${processedData.duplicates.length - 3} more`}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Error Display */}
                   {error && (
-                    <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-6 py-4 rounded-xl flex items-start space-x-3 backdrop-blur-sm">
-                      <AlertCircle className="h-6 w-6 mt-0.5 flex-shrink-0" />
-                      <p className="text-sm leading-relaxed">{error}</p>
+                    <div className="p-4 border border-red-500/30 bg-red-500/10 text-red-400">
+                      <div className="flex items-start space-x-3">
+                        <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm">{error}</p>
+                      </div>
                     </div>
                   )}
 
                   {/* Upload Button */}
                   <Button
                     onClick={handleUpload}
-                    disabled={!file || uploading || preview.length === 0}
-                    className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white py-6 text-xl font-bold shadow-2xl shadow-purple-500/25 border-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!file || uploading || !processedData || processedData.valid.length === 0}
+                    className="w-full bg-white text-black hover:bg-white/90 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {uploading ? (
                       <>
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        Uploading Magic...
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                        UPLOADING...
                       </>
                     ) : (
                       <>
-                        <Zap className="h-6 w-6 mr-3" />
-                        Import to Firebase
+                        <Upload className="h-4 w-4 mr-2" />
+                        IMPORT {processedData?.valid.length || 0} WORDS
                       </>
                     )}
                   </Button>
 
                   {/* Sample Download */}
-                  <div className="pt-6 border-t border-white/20">
+                  <div className="pt-6 border-t border-white/10">
                     <Button
                       variant="outline"
                       onClick={downloadSample}
-                      className="w-full border-purple-400/50 text-purple-300 hover:bg-purple-500/20 hover:text-purple-200 bg-white/5 backdrop-blur-sm py-4"
+                      className="w-full border-white/20 text-white hover:bg-white/10"
                     >
-                      <Download className="h-5 w-5 mr-2" />
-                      Download Sample JSON
+                      <Download className="h-4 w-4 mr-2" />
+                      DOWNLOAD SAMPLE
                     </Button>
-                    <p className="text-xs text-gray-400 mt-3 text-center">
-                      Get a perfectly formatted sample file to see the magic ✨
-                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -345,21 +391,19 @@ export default function UploadPage() {
             {/* Instructions & Preview */}
             <div className="space-y-8">
               {/* Instructions */}
-              <Card className="bg-white/10 backdrop-blur-xl border-white/20">
+              <Card className="border-white/10 bg-white/5">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-white flex items-center">
-                    <Brain className="h-6 w-6 mr-3 text-blue-400" />
-                    JSON Format Guide
+                  <CardTitle className="text-xl text-white uppercase tracking-wider">
+                    JSON FORMAT
                   </CardTitle>
-                  <CardDescription className="text-gray-300 text-base">
-                    Follow this format for seamless imports
+                  <CardDescription className="text-white/60">
+                    Required structure for import
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-8">
                   <div className="space-y-6">
-                    <div className="bg-gray-900/50 p-6 rounded-xl border border-gray-700">
-                      <p className="text-sm font-medium text-purple-300 mb-3">Required Format:</p>
-                      <pre className="text-sm text-gray-300 overflow-x-auto leading-relaxed">
+                    <div className="bg-black/50 p-4 border border-white/10 font-mono text-sm">
+                      <pre className="text-white/80 overflow-x-auto">
 {`[
   {
     "word": "Abate",
@@ -373,22 +417,18 @@ export default function UploadPage() {
                       </pre>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-3">
-                      <div className="flex items-center space-x-3 text-gray-300">
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center space-x-3 text-white/80">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
                         <span>Must be a valid JSON array</span>
                       </div>
-                      <div className="flex items-center space-x-3 text-gray-300">
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></div>
+                      <div className="flex items-center space-x-3 text-white/80">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
                         <span>Each object needs "word" and "definition" fields</span>
                       </div>
-                      <div className="flex items-center space-x-3 text-gray-300">
-                        <div className="w-3 h-3 bg-emerald-500 rounded-full flex-shrink-0"></div>
-                        <span>Both fields must be non-empty strings</span>
-                      </div>
-                      <div className="flex items-center space-x-3 text-gray-300">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                        <span>Invalid entries are automatically filtered out</span>
+                      <div className="flex items-center space-x-3 text-white/80">
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                        <span>Duplicates are automatically filtered</span>
                       </div>
                     </div>
                   </div>
@@ -397,24 +437,23 @@ export default function UploadPage() {
 
               {/* Preview */}
               {preview.length > 0 && (
-                <Card className="bg-white/10 backdrop-blur-xl border-white/20">
+                <Card className="border-white/10 bg-white/5">
                   <CardHeader>
-                    <CardTitle className="text-2xl text-white flex items-center">
-                      <Sparkles className="h-6 w-6 mr-3 text-yellow-400" />
-                      Preview
+                    <CardTitle className="text-xl text-white uppercase tracking-wider">
+                      PREVIEW
                     </CardTitle>
-                    <CardDescription className="text-gray-300 text-base">
+                    <CardDescription className="text-white/60">
                       First {preview.length} words from your file
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-8">
                     <div className="space-y-4">
                       {preview.map((word, index) => (
-                        <div key={index} className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-6 rounded-xl border border-purple-500/30 backdrop-blur-sm">
-                          <h4 className="font-bold text-white capitalize mb-2 text-lg">
+                        <div key={index} className="border border-white/10 p-4 bg-white/5">
+                          <h4 className="font-bold text-white uppercase tracking-wider mb-2">
                             {word.word}
                           </h4>
-                          <p className="text-gray-300 leading-relaxed">
+                          <p className="text-white/80 text-sm">
                             {word.definition}
                           </p>
                         </div>

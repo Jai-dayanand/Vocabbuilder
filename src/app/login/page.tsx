@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Brain, Mail, Lock, Sparkles, Zap } from 'lucide-react';
+import { Brain, Mail, Lock } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -49,113 +49,109 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -inset-10 opacity-50">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-          <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-          <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-black text-white p-6">
+      {/* Minimal geometric background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+        <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+        <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+        
+        {/* Floating minimal elements */}
+        <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-white/30 rotate-45 animate-pulse"></div>
+        <div className="absolute bottom-1/3 left-1/5 w-1 h-1 bg-white/40 rounded-full animate-pulse delay-1000"></div>
+        <div className="absolute top-2/3 right-1/3 w-1.5 h-1.5 bg-white/20 rotate-45 animate-pulse delay-2000"></div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full blur opacity-75 animate-pulse"></div>
-              <div className="relative bg-gradient-to-r from-purple-600 to-blue-600 p-6 rounded-full">
-                <Brain className="h-12 w-12 text-white" />
-              </div>
-            </div>
+          <div className="w-12 h-12 bg-white rounded-sm mx-auto mb-6 flex items-center justify-center">
+            <Brain className="h-6 w-6 text-black" />
           </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-purple-200 to-blue-200 bg-clip-text text-transparent mb-4">
-            GRE Mastery
+          <h1 className="text-3xl font-bold uppercase tracking-wider mb-4">
+            GRE MASTERY
           </h1>
-          <p className="text-xl text-gray-300 leading-relaxed">
-            Master your GRE vocabulary with confidence and style
+          <p className="text-white/60">
+            Master your GRE vocabulary with precision
           </p>
         </div>
 
-        <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl">
+        <Card className="border-white/10 bg-white/5">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-3xl text-white">Welcome</CardTitle>
-            <CardDescription className="text-lg text-gray-300">
+            <CardTitle className="text-2xl text-white uppercase tracking-wider">WELCOME</CardTitle>
+            <CardDescription className="text-white/60">
               Sign in to your account or create a new one
             </CardDescription>
           </CardHeader>
           <CardContent className="p-8">
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/10 backdrop-blur-sm">
+              <TabsList className="grid w-full grid-cols-2 mb-8 bg-white/10">
                 <TabsTrigger 
                   value="signin" 
-                  className="text-gray-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+                  className="text-white/60 data-[state=active]:bg-white data-[state=active]:text-black uppercase tracking-wider text-sm"
                 >
-                  Sign In
+                  SIGN IN
                 </TabsTrigger>
                 <TabsTrigger 
                   value="signup"
-                  className="text-gray-300 data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+                  className="text-white/60 data-[state=active]:bg-white data-[state=active]:text-black uppercase tracking-wider text-sm"
                 >
-                  Sign Up
+                  SIGN UP
                 </TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="email" className="text-lg font-medium text-gray-200">Email</Label>
+                    <Label htmlFor="email" className="text-sm font-medium text-white/80 uppercase tracking-wider">EMAIL</Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                       <Input
                         id="email"
                         type="email"
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-12 py-6 text-lg bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm"
+                        className="pl-12 bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10"
                         required
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-3">
-                    <Label htmlFor="password" className="text-lg font-medium text-gray-200">Password</Label>
+                    <Label htmlFor="password" className="text-sm font-medium text-white/80 uppercase tracking-wider">PASSWORD</Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                       <Input
                         id="password"
                         type="password"
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-12 py-6 text-lg bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm"
+                        className="pl-12 bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10"
                         required
                       />
                     </div>
                   </div>
                   
                   {error && (
-                    <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
+                    <div className="p-4 border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
                       {error}
                     </div>
                   )}
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-6 text-xl font-bold shadow-2xl shadow-purple-500/25 border-0"
+                    className="w-full bg-white text-black hover:bg-white/90 font-medium uppercase tracking-wider"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Signing in...
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                        SIGNING IN...
                       </>
                     ) : (
-                      <>
-                        <Sparkles className="h-5 w-5 mr-2" />
-                        Sign In
-                      </>
+                      'SIGN IN'
                     )}
                   </Button>
                 </form>
@@ -164,32 +160,32 @@ export default function LoginPage() {
               <TabsContent value="signup">
                 <form onSubmit={handleSignUp} className="space-y-6">
                   <div className="space-y-3">
-                    <Label htmlFor="signup-email" className="text-lg font-medium text-gray-200">Email</Label>
+                    <Label htmlFor="signup-email" className="text-sm font-medium text-white/80 uppercase tracking-wider">EMAIL</Label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                       <Input
                         id="signup-email"
                         type="email"
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="pl-12 py-6 text-lg bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm"
+                        className="pl-12 bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10"
                         required
                       />
                     </div>
                   </div>
                   
                   <div className="space-y-3">
-                    <Label htmlFor="signup-password" className="text-lg font-medium text-gray-200">Password</Label>
+                    <Label htmlFor="signup-password" className="text-sm font-medium text-white/80 uppercase tracking-wider">PASSWORD</Label>
                     <div className="relative">
-                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
                       <Input
                         id="signup-password"
                         type="password"
                         placeholder="Create a password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="pl-12 py-6 text-lg bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm"
+                        className="pl-12 bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10"
                         required
                         minLength={6}
                       />
@@ -197,26 +193,23 @@ export default function LoginPage() {
                   </div>
                   
                   {error && (
-                    <div className="bg-red-500/20 border border-red-500/30 text-red-300 px-4 py-3 rounded-xl text-sm backdrop-blur-sm">
+                    <div className="p-4 border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
                       {error}
                     </div>
                   )}
                   
                   <Button 
                     type="submit" 
-                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-6 text-xl font-bold shadow-2xl shadow-emerald-500/25 border-0"
+                    className="w-full bg-white text-black hover:bg-white/90 font-medium uppercase tracking-wider"
                     disabled={loading}
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Creating account...
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2"></div>
+                        CREATING...
                       </>
                     ) : (
-                      <>
-                        <Zap className="h-5 w-5 mr-2" />
-                        Create Account
-                      </>
+                      'CREATE ACCOUNT'
                     )}
                   </Button>
                 </form>
