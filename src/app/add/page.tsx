@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Plus, BookOpen, Type, FileText, Upload } from 'lucide-react';
+import { ArrowLeft, Plus, Brain, Type, FileText, Upload, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -53,13 +53,22 @@ export default function AddWordPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+        {/* Animated Background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -inset-10 opacity-50">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
+            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
+            <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
+          </div>
+        </div>
+
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-white/20">
-          <div className="max-w-2xl mx-auto px-4 py-4">
-            <div className="flex items-center space-x-3">
+        <div className="relative z-10 bg-white/10 backdrop-blur-xl border-b border-white/20">
+          <div className="max-w-4xl mx-auto px-6 py-6">
+            <div className="flex items-center space-x-4">
               <Link href="/">
-                <Button variant="ghost" size="sm" className="text-gray-600 hover:text-gray-900">
+                <Button variant="ghost" size="sm" className="text-gray-300 hover:text-white hover:bg-white/10">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Vocabulary
                 </Button>
@@ -68,34 +77,51 @@ export default function AddWordPage() {
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-green-600 p-3 rounded-full shadow-lg">
-                <Plus className="h-8 w-8 text-white" />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 py-8">
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full blur opacity-75 animate-pulse"></div>
+                <div className="relative bg-gradient-to-r from-emerald-600 to-teal-600 p-6 rounded-full">
+                  <Plus className="h-12 w-12 text-white" />
+                </div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Add New GRE Word</h1>
-            <p className="text-gray-600">Expand your vocabulary with a new word and definition</p>
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-white via-emerald-200 to-teal-200 bg-clip-text text-transparent mb-4">
+              Add New GRE Word
+            </h1>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto leading-relaxed">
+              Expand your vocabulary arsenal with a powerful new word and definition
+            </p>
           </div>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl text-gray-900">New Vocabulary Entry</CardTitle>
-              <CardDescription>Add a GRE word with its definition to your personal collection</CardDescription>
+          <Card className="bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl">
+            <CardHeader className="text-center pb-6">
+              <CardTitle className="text-3xl text-white flex items-center justify-center">
+                <Brain className="h-8 w-8 mr-3 text-purple-400" />
+                New Vocabulary Entry
+              </CardTitle>
+              <CardDescription className="text-lg text-gray-300">
+                Add a GRE word with its definition to your personal collection
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
               {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md mb-6 text-center">
-                  <p className="font-semibold">Word added successfully!</p>
-                  <p className="text-sm">Redirecting to your vocabulary list...</p>
+                <div className="bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-emerald-300 px-6 py-4 rounded-xl mb-8 text-center backdrop-blur-sm">
+                  <div className="flex items-center justify-center space-x-3">
+                    <Sparkles className="h-6 w-6" />
+                    <div>
+                      <p className="font-bold text-lg">Word added successfully!</p>
+                      <p className="text-emerald-200">Redirecting to your vocabulary list...</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="word" className="text-sm font-medium text-gray-700 flex items-center">
-                    <Type className="h-4 w-4 mr-2" />
+              <form onSubmit={handleSubmit} className="space-y-8">
+                <div className="space-y-3">
+                  <Label htmlFor="word" className="text-lg font-medium text-gray-200 flex items-center">
+                    <Type className="h-5 w-5 mr-2 text-purple-400" />
                     Word
                   </Label>
                   <Input
@@ -104,15 +130,15 @@ export default function AddWordPage() {
                     placeholder="Enter the GRE word (e.g., Abate)"
                     value={word}
                     onChange={(e) => setWord(e.target.value)}
-                    className="text-lg py-6 bg-white/50 border-white/20 focus:bg-white/80"
+                    className="text-xl py-6 bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm"
                     required
                   />
-                  <p className="text-xs text-gray-500">The vocabulary word you want to learn</p>
+                  <p className="text-sm text-gray-400">The vocabulary word you want to master</p>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="definition" className="text-sm font-medium text-gray-700 flex items-center">
-                    <FileText className="h-4 w-4 mr-2" />
+                <div className="space-y-3">
+                  <Label htmlFor="definition" className="text-lg font-medium text-gray-200 flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-blue-400" />
                     Definition
                   </Label>
                   <Textarea
@@ -120,54 +146,52 @@ export default function AddWordPage() {
                     placeholder="Enter the definition (e.g., To reduce in intensity or amount)"
                     value={definition}
                     onChange={(e) => setDefinition(e.target.value)}
-                    className="min-h-[120px] text-lg bg-white/50 border-white/20 focus:bg-white/80 resize-none"
+                    className="min-h-[140px] text-lg bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder-gray-400 backdrop-blur-sm resize-none"
                     required
                   />
-                  <p className="text-xs text-gray-500">A clear and concise definition of the word</p>
+                  <p className="text-sm text-gray-400">A clear and comprehensive definition of the word</p>
                 </div>
 
-                <div className="flex space-x-4">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   <Button
                     type="submit"
                     disabled={loading || !word.trim() || !definition.trim()}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white py-6 text-lg"
+                    className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white py-6 text-xl font-bold shadow-2xl shadow-emerald-500/25 border-0"
                   >
                     {loading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
                         Adding Word...
                       </>
                     ) : (
                       <>
-                        <Plus className="h-4 w-4 mr-2" />
+                        <Plus className="h-6 w-6 mr-3" />
                         Add to Vocabulary
                       </>
                     )}
                   </Button>
                   
                   <Link href="/" className="flex-1">
-                    <Button variant="outline" className="w-full py-6 text-lg border-gray-300 hover:bg-gray-50">
+                    <Button variant="outline" className="w-full py-6 text-xl border-gray-500 text-gray-300 hover:bg-white/10 hover:text-white bg-white/5 backdrop-blur-sm">
                       Cancel
                     </Button>
                   </Link>
                 </div>
-
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-3">Need to add multiple words?</p>
-                    <Link href="/upload">
-                      <Button variant="outline" className="border-blue-200 text-blue-600 hover:bg-blue-50">
-                        <Upload className="h-4 w-4 mr-2" />
-                        Try Bulk Import
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-center space-x-2 text-sm text-gray-600">
-                  <BookOpen className="h-4 w-4" />
+              <div className="mt-12 pt-8 border-t border-white/20">
+                <div className="text-center mb-6">
+                  <p className="text-gray-300 mb-4">Need to add multiple words?</p>
+                  <Link href="/upload">
+                    <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg shadow-purple-500/25 border-0">
+                      <Upload className="h-5 w-5 mr-2" />
+                      Try Bulk Import
+                    </Button>
+                  </Link>
+                </div>
+                
+                <div className="flex items-center justify-center space-x-3 text-gray-400">
+                  <Brain className="h-5 w-5" />
                   <span>Building your GRE vocabulary one word at a time</span>
                 </div>
               </div>
