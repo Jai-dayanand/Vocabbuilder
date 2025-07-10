@@ -280,9 +280,15 @@ export default function HomePage() {
                   </Button>
                 </Link>
                 <Link href="/upload">
-                  <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                  <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 mr-4">
                     <Upload className="h-4 w-4 mr-2" />
-                    Import JSON
+                    JSON
+                  </Button>
+                </Link>
+                <Link href="/extract">
+                  <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Extract
                   </Button>
                 </Link>
               </div>
