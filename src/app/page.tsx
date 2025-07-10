@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, Plus, LogOut, Trash2, Upload, Target, Brain, Zap, Filter, Grid, List } from 'lucide-react';
+import { BookOpen, Search, Plus, LogOut, Trash2, Upload, Target, Brain, Zap, Filter, Grid, List, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { 
   collection, 
