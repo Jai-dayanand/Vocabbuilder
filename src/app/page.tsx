@@ -5,9 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, Plus, LogOut, Trash2, Upload, Target, TrendingUp, Brain, Zap } from 'lucide-react';
+import { BookOpen, Search, Plus, LogOut, Trash2, Upload, Target, Brain, Zap, Filter, Grid, List } from 'lucide-react';
 import Link from 'next/link';
 import { 
   collection, 
@@ -32,6 +31,7 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const { user, signOut } = useAuth();
 
   useEffect(() => {
@@ -105,206 +105,267 @@ export default function HomePage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-black text-white">
-        {/* Minimal geometric background */}
-        <div className="fixed inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-          <div className="absolute top-0 left-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
-          <div className="absolute top-0 right-0 w-px h-full bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
-          
-          {/* Floating minimal elements */}
-          <div className="absolute top-1/4 right-1/4 w-2 h-2 bg-white/30 rotate-45 animate-pulse"></div>
-          <div className="absolute bottom-1/3 left-1/5 w-1 h-1 bg-white/40 rounded-full animate-pulse delay-1000"></div>
-          <div className="absolute top-2/3 right-1/3 w-1.5 h-1.5 bg-white/20 rotate-45 animate-pulse delay-2000"></div>
-        </div>
-
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
         {/* Header */}
-        <div className="relative z-10 border-b border-white/10 bg-black/80 backdrop-blur-sm sticky top-0">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="w-8 h-8 bg-white rounded-sm flex items-center justify-center">
-                  <Brain className="h-5 w-5 text-black" />
+        <header className="sticky top-0 z-50 glass border-b border-white/5">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              {/* Logo */}
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Brain className="h-4 w-4 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold tracking-tight">GRE MASTERY</h1>
-                  <p className="text-xs text-white/60 uppercase tracking-wider">
-                    {user?.email?.split('@')[0]}
-                  </p>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg font-semibold">GRE Mastery</h1>
+                  <p className="text-xs text-gray-400">{user?.email?.split('@')[0]}</p>
                 </div>
               </div>
               
+              {/* Actions */}
               <div className="flex items-center space-x-2">
-                <Link href="/add">
-                  <Button className="bg-white text-black hover:bg-white/90 font-medium">
+                <Link href="/add" className="hidden sm:block">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
-                    ADD
+                    Add
                   </Button>
                 </Link>
-                <Link href="/upload">
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Link href="/upload" className="hidden sm:block">
+                  <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800">
                     <Upload className="h-4 w-4 mr-2" />
-                    BULK
+                    Import
                   </Button>
                 </Link>
                 <Button 
-                  variant="outline" 
+                  variant="ghost" 
+                  size="sm"
                   onClick={handleSignOut}
-                  className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  className="text-gray-400 hover:text-white hover:bg-gray-800"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Error Message */}
           {error && (
-            <div className="mb-8 p-4 border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm animate-fade-in">
               {error}
             </div>
           )}
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="border border-white/10 p-4 bg-white/5">
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="glass p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <BookOpen className="h-4 w-4 text-white/60" />
-                <span className="text-xs text-white/40 uppercase tracking-wider">TOTAL</span>
+                <BookOpen className="h-4 w-4 text-blue-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Total</span>
               </div>
               <p className="text-2xl font-bold">{words.length}</p>
             </div>
             
-            <div className="border border-white/10 p-4 bg-white/5">
+            <div className="glass p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Search className="h-4 w-4 text-white/60" />
-                <span className="text-xs text-white/40 uppercase tracking-wider">FOUND</span>
+                <Search className="h-4 w-4 text-green-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Found</span>
               </div>
               <p className="text-2xl font-bold">{filteredWords.length}</p>
             </div>
             
-            <div className="border border-white/10 p-4 bg-white/5">
+            <div className="glass p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <Target className="h-4 w-4 text-white/60" />
-                <span className="text-xs text-white/40 uppercase tracking-wider">PROGRESS</span>
+                <Target className="h-4 w-4 text-purple-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Progress</span>
               </div>
               <p className="text-2xl font-bold">{getProgressPercentage().toFixed(0)}%</p>
-              <div className="mt-2 w-full bg-white/10 h-1">
+              <div className="mt-2 w-full bg-gray-800 h-1 rounded-full overflow-hidden">
                 <div 
-                  className="bg-white h-1 transition-all duration-500"
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 h-1 transition-all duration-500 rounded-full"
                   style={{ width: `${getProgressPercentage()}%` }}
                 ></div>
               </div>
             </div>
 
-            <div className="border border-white/10 p-4 bg-white/5">
+            <div className="glass p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
-                <TrendingUp className="h-4 w-4 text-white/60" />
-                <span className="text-xs text-white/40 uppercase tracking-wider">STREAK</span>
+                <Zap className="h-4 w-4 text-yellow-400" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">Streak</span>
               </div>
               <p className="text-2xl font-bold">7</p>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/40" />
+          {/* Search and Controls */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="SEARCH VOCABULARY..."
+                placeholder="Search vocabulary..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 bg-white/5 border-white/10 text-white placeholder-white/40 focus:border-white/30 focus:bg-white/10 uppercase tracking-wider text-sm"
+                className="pl-10 bg-gray-900/50 border-gray-700 text-white placeholder-gray-400 focus:border-blue-500 focus:bg-gray-900"
               />
               {searchTerm && (
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <Badge className="bg-white/10 text-white/80 border-white/20 text-xs">
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/30">
                     {filteredWords.length}
                   </Badge>
                 </div>
               )}
             </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={viewMode === 'grid' ? 'bg-blue-600 hover:bg-blue-700' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'bg-blue-600 hover:bg-blue-700' : 'border-gray-700 text-gray-300 hover:bg-gray-800'}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Action Buttons */}
+          <div className="flex sm:hidden gap-2 mb-6">
+            <Link href="/add" className="flex-1">
+              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Word
+              </Button>
+            </Link>
+            <Link href="/upload" className="flex-1">
+              <Button variant="outline" className="w-full border-gray-700 text-gray-300 hover:bg-gray-800">
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </Button>
+            </Link>
           </div>
 
           {/* Words List */}
           {loading ? (
             <div className="text-center py-20">
-              <div className="w-8 h-8 bg-white rounded-sm mx-auto mb-4 animate-pulse"></div>
-              <p className="text-white/60 uppercase tracking-wider text-sm">LOADING</p>
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mx-auto mb-4 animate-pulse-custom"></div>
+              <p className="text-gray-400">Loading vocabulary...</p>
             </div>
           ) : filteredWords.length === 0 ? (
-            <div className="border border-white/10 p-16 text-center bg-white/5">
-              <div className="w-12 h-12 bg-white/10 rounded-sm mx-auto mb-6 flex items-center justify-center">
-                <BookOpen className="h-6 w-6 text-white/60" />
+            <div className="glass p-12 text-center rounded-lg">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg mx-auto mb-6 flex items-center justify-center">
+                <BookOpen className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-xl font-bold mb-3 uppercase tracking-wider">
-                {searchTerm ? 'NO MATCHES' : 'START BUILDING'}
+              <h3 className="text-xl font-semibold mb-3">
+                {searchTerm ? 'No matches found' : 'Start building your vocabulary'}
               </h3>
-              <p className="text-white/60 mb-8 max-w-md mx-auto">
+              <p className="text-gray-400 mb-8 max-w-md mx-auto">
                 {searchTerm 
-                  ? `No words match "${searchTerm}"`
-                  : 'Begin your GRE vocabulary journey'
+                  ? `No words match "${searchTerm}". Try a different search term.`
+                  : 'Add your first GRE word to begin your vocabulary journey.'
                 }
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/add">
-                  <Button className="bg-white text-black hover:bg-white/90 font-medium">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
-                    ADD FIRST WORD
+                    Add First Word
                   </Button>
                 </Link>
                 <Link href="/upload">
-                  <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                  <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
                     <Upload className="h-4 w-4 mr-2" />
-                    IMPORT JSON
+                    Import JSON
                   </Button>
                 </Link>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className={`${
+              viewMode === 'grid' 
+                ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4' 
+                : 'space-y-3'
+            }`}>
               {filteredWords.map((word, index) => (
-                <div key={word.id} className="group border border-white/10 p-6 bg-white/5 hover:bg-white/10 transition-all duration-200">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold uppercase tracking-wider mb-1">
-                        {word.word}
-                      </h3>
-                      <Badge className="bg-white/10 text-white/60 border-white/20 text-xs">
-                        #{index + 1}
-                      </Badge>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(word.id)}
-                      className="text-red-400 hover:text-red-300 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <p className="text-white/80 leading-relaxed mb-4 text-sm">
-                    {word.definition}
-                  </p>
-                  
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-white/5 text-white/50 border-white/10 text-xs">
-                      <Zap className="h-3 w-3 mr-1" />
-                      GRE
-                    </Badge>
-                    <span className="text-xs text-white/30 uppercase tracking-wider">
-                      {word.createdAt?.toDate?.()?.toLocaleDateString() || 'RECENT'}
-                    </span>
-                  </div>
+                <div 
+                  key={word.id} 
+                  className={`group glass hover:bg-white/5 transition-all duration-200 animate-fade-in ${
+                    viewMode === 'grid' ? 'p-6 rounded-lg' : 'p-4 rounded-lg flex items-center justify-between'
+                  }`}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {viewMode === 'grid' ? (
+                    <>
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold mb-1 group-hover:text-blue-400 transition-colors">
+                            {word.word}
+                          </h3>
+                          <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/30 text-xs">
+                            #{index + 1}
+                          </Badge>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(word.id)}
+                          className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <p className="text-gray-300 leading-relaxed mb-4 text-sm">
+                        {word.definition}
+                      </p>
+                      
+                      <div className="flex items-center justify-between text-xs">
+                        <Badge className="bg-gray-800 text-gray-400 border-gray-700">
+                          <Zap className="h-3 w-3 mr-1" />
+                          GRE
+                        </Badge>
+                        <span className="text-gray-500">
+                          {word.createdAt?.toDate?.()?.toLocaleDateString() || 'Recent'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-1">
+                          <h3 className="font-semibold group-hover:text-blue-400 transition-colors">
+                            {word.word}
+                          </h3>
+                          <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/30 text-xs">
+                            #{index + 1}
+                          </Badge>
+                        </div>
+                        <p className="text-gray-400 text-sm line-clamp-2">
+                          {word.definition}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(word.id)}
+                        className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
     </ProtectedRoute>
   );
