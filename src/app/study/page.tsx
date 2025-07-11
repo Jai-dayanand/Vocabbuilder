@@ -63,7 +63,7 @@ export default function StudyPage() {
   const router = useRouter();
 
   const [settings, setSettings] = useState<StudySettings>({
-    wordsPerSession: 10,
+    wordsPerSession: 25,
     timePerWord: 30,
     autoAdvance: true,
     shuffleWords: true
@@ -76,7 +76,7 @@ export default function StudyPage() {
     totalTime: 0,
     isActive: false,
     isPaused: false,
-    showDefinition: false,
+    showDefinition: true,
     wordsStudied: 0,
     sessionStartTime: 0
   });
@@ -92,8 +92,7 @@ export default function StudyPage() {
       try {
         const q = query(
           collection(db, 'gre_words'),
-          where('userId', '==', user.uid),
-          limit(100)
+          where('userId', '==', user.uid)
         );
 
         const querySnapshot = await getDocs(q);
@@ -196,7 +195,7 @@ export default function StudyPage() {
       return {
         ...prev,
         currentIndex: nextIndex,
-        showDefinition: false,
+        showDefinition: true,
         wordsStudied
       };
     });
@@ -216,7 +215,7 @@ export default function StudyPage() {
       totalTime: 0,
       isActive: false,
       isPaused: false,
-      showDefinition: false,
+      showDefinition: true,
       wordsStudied: 0,
       sessionStartTime: 0
     });
@@ -319,7 +318,7 @@ export default function StudyPage() {
                         Words per Session
                       </label>
                       <div className="flex space-x-2">
-                        {[5, 10, 15, 20].map((num) => (
+                        {[10, 25, 50, 100].map((num) => (
                           <Button
                             key={num}
                             variant={settings.wordsPerSession === num ? "default" : "outline"}
@@ -433,15 +432,12 @@ export default function StudyPage() {
                     <h2 className="text-4xl font-bold mb-4 gradient-text">
                       {currentWord.word}
                     </h2>
-                  </div>
-
-                  {session.showDefinition && (
                     <div className="mb-6 p-6 bg-gray-900/50 border border-gray-700 rounded-lg animate-fade-in">
                       <p className="text-lg text-gray-300 leading-relaxed">
                         {currentWord.definition}
                       </p>
                     </div>
-                  )}
+                  </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button
