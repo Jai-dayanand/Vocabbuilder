@@ -92,8 +92,7 @@ export default function StudyPage() {
       try {
         const q = query(
           collection(db, 'gre_words'),
-          where('userId', '==', user.uid),
-          orderBy('createdAt', 'desc')
+          where('userId', '==', user.uid)
         );
 
         const querySnapshot = await getDocs(q);
@@ -102,10 +101,18 @@ export default function StudyPage() {
           wordsData.push({ id: doc.id, ...doc.data() } as Word);
         });
 
+        // Sort by createdAt after fetching
+        wordsData.sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return b.createdAt.toMillis() - a.createdAt.toMillis();
+          }
+          return 0;
+        });
+
         setWords(wordsData);
       } catch (error) {
         console.error('Error loading words:', error);
-        setError('Failed to load vocabulary. Please try again.');
+        setError('Failed to load vocabulary. Please refresh the page.');
       } finally {
         setLoading(false);
       }
