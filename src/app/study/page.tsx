@@ -92,7 +92,8 @@ export default function StudyPage() {
       try {
         const q = query(
           collection(db, 'gre_words'),
-          where('userId', '==', user.uid)
+          where('userId', '==', user.uid),
+          limit(100)
         );
 
         const querySnapshot = await getDocs(q);
@@ -101,13 +102,8 @@ export default function StudyPage() {
           wordsData.push({ id: doc.id, ...doc.data() } as Word);
         });
 
-        // Sort by createdAt after fetching
-        wordsData.sort((a, b) => {
-          if (a.createdAt && b.createdAt) {
-            return b.createdAt.toMillis() - a.createdAt.toMillis();
-          }
-          return 0;
-        });
+        // Simple sort by word name if createdAt sorting fails
+        wordsData.sort((a, b) => a.word.localeCompare(b.word));
 
         setWords(wordsData);
       } catch (error) {
