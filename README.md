@@ -8,6 +8,9 @@ A beautiful, modern vocabulary learning app built with Next.js 14, Firebase, and
 - **Real-time Database**: Words sync instantly across devices using Firestore
 - **Search & Filter**: Find words quickly with live search
 - **CRUD Operations**: Add, view, and delete vocabulary words
+- **Timed Study Sessions**: Review vocabulary in focused, customizable chunks
+- **Smart Document Extraction**: AI-powered vocabulary extraction from PDFs and documents
+- **Bulk Import**: Import multiple words via JSON files
 - **Responsive Design**: Works perfectly on all devices
 - **Beautiful UI**: Modern design with gradients and smooth animations
 
@@ -69,6 +72,8 @@ npm run dev
 2. **View Words**: See your vocabulary list on the home page with real-time updates
 3. **Search**: Use the search bar to find specific words or definitions
 4. **Add Words**: Click "Add Word" to add new vocabulary entries
+5. **Study Sessions**: Click "Study" to start timed review sessions with customizable settings
+6. **Bulk Import**: Use "Import" to upload JSON files or "Extract" to pull words from documents
 5. **Delete Words**: Click the trash icon to remove words
 6. **Real-time Sync**: Changes appear instantly across all your devices
 
@@ -83,6 +88,13 @@ npm run dev
 - **Real-time Updates**: Changes sync instantly using Firestore listeners
 - **User Isolation**: Each user only sees their own words
 - **Search Functionality**: Search through words and definitions
+- **Timed Study Sessions**: Customizable study sessions with progress tracking
+  - Choose session size (10, 25, 50, or 100 words)
+  - Set time per word (15s, 30s, 45s, or 60s)
+  - Auto-advance and shuffle options
+  - Real-time progress tracking
+- **Smart Extraction**: AI-powered vocabulary extraction from documents
+- **Bulk Operations**: Import/export vocabulary in JSON format
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Loading States**: Smooth loading indicators
 - **Error Handling**: Graceful error handling for network issues
@@ -102,6 +114,9 @@ The app is configured for deployment on Vercel:
 ├── app/
 │   ├── login/          # Authentication page
 │   ├── add/            # Add new word page
+│   ├── study/          # Timed study sessions
+│   ├── upload/         # Bulk JSON import
+│   ├── extract/        # Document extraction
 │   └── page.tsx        # Home page (word list)
 ├── components/
 │   ├── ui/             # shadcn/ui components
