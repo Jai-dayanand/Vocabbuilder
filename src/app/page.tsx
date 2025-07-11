@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Search, Plus, LogOut, Trash2, Upload, Target, Brain, Zap, Filter, Grid, List, FileText } from 'lucide-react';
+import { BookOpen, Search, Plus, LogOut, Trash2, Upload, Target, Brain, Zap, Filter, Grid, List, FileText, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { 
   collection, 
@@ -123,6 +123,12 @@ export default function HomePage() {
               
               {/* Actions */}
               <div className="flex items-center space-x-2">
+                <Link href="/study" className="hidden sm:block">
+                  <Button variant="outline" size="sm" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Study
+                  </Button>
+                </Link>
                 <Link href="/add" className="hidden sm:block">
                   <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
@@ -238,6 +244,12 @@ export default function HomePage() {
 
           {/* Mobile Action Buttons */}
           <div className="flex sm:hidden gap-2 mb-6">
+            <Link href="/study" className="flex-1">
+              <Button variant="outline" className="w-full border-gray-700 text-gray-300 hover:bg-gray-800">
+                <Clock className="h-4 w-4 mr-2" />
+                Study
+              </Button>
+            </Link>
             <Link href="/add" className="flex-1">
               <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
@@ -273,6 +285,12 @@ export default function HomePage() {
                 }
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/study">
+                  <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Start Study Session
+                  </Button>
+                </Link>
                 <Link href="/add">
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
