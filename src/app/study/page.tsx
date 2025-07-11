@@ -51,6 +51,7 @@ interface StudySettings {
   timePerWord: number;
   autoAdvance: boolean;
   shuffleWords: boolean;
+  uniqueWordsMode: boolean;
 }
 
 export default function StudyPage() {
@@ -66,7 +67,8 @@ export default function StudyPage() {
     wordsPerSession: 25,
     timePerWord: 30,
     autoAdvance: true,
-    shuffleWords: true
+    shuffleWords: true,
+    uniqueWordsMode: true
   });
 
   const [session, setSession] = useState<StudySession>({
@@ -80,6 +82,10 @@ export default function StudyPage() {
     wordsStudied: 0,
     sessionStartTime: 0
   });
+
+  // Track studied words across sessions
+  const [studiedWordsInSession, setStudiedWordsInSession] = useState<Set<string>>(new Set());
+  const [availableWords, setAvailableWords] = useState<Word[]>([]);
 
   // Load words from Firebase
   useEffect(() => {
@@ -105,6 +111,7 @@ export default function StudyPage() {
         wordsData.sort((a, b) => a.word.localeCompare(b.word));
 
         setWords(wordsData);
+        setAvailableWords(wordsData);
       } catch (error) {
         console.error('Error loading words:', error);
         setError('Failed to load vocabulary. Please refresh the page.');
@@ -115,6 +122,16 @@ export default function StudyPage() {
 
     loadWords();
   }, [user]);
+
+  // Update available words when settings or studied words change
+  useEffect(() => {
+    if (settings.uniqueWordsMode) {
+      const remaining = words.filter(word => !studiedWordsInSession.has(word.id));
+      setAvailableWords(remaining);
+    } else {
+      setAvailableWords(words);
+    }
+  }, [words, studiedWordsInSession, settings.uniqueWordsMode]);
 
   // Timer effect
   useEffect(() => {
@@ -147,12 +164,12 @@ export default function StudyPage() {
   };
 
   const startSession = () => {
-    if (words.length === 0) {
-      setError('No words available for study session.');
+    if (availableWords.length === 0) {
+      setError(settings.uniqueWordsMode ? 'No new words available. Reset sessions to study all words again.' : 'No words available for study session.');
       return;
     }
 
-    let sessionWords = words.slice(0, settings.wordsPerSession);
+    let sessionWords = availableWords.slice(0, settings.wordsPerSession);
     if (settings.shuffleWords) {
       sessionWords = shuffleArray(sessionWords);
     }
@@ -182,6 +199,13 @@ export default function StudyPage() {
       const nextIndex = prev.currentIndex + 1;
       const wordsStudied = prev.wordsStudied + 1;
       
+      // Mark current word as studied if in unique mode
+      if (settings.uniqueWordsMode && prev.words[prev.currentIndex]) {
+        setStudiedWordsInSession(prevStudied => 
+          new Set([...prevStudied, prev.words[prev.currentIndex].id])
+        );
+      }
+      
       if (nextIndex >= prev.words.length) {
         // Session complete
         return {
@@ -208,6 +232,8 @@ export default function StudyPage() {
   };
 
   const resetSession = () => {
+    // Reset studied words tracking
+    setStudiedWordsInSession(new Set());
     setSession({
       words: [],
       currentIndex: 0,
@@ -221,6 +247,10 @@ export default function StudyPage() {
     });
     setShowSettings(true);
     setTimeLeft(0);
+  };
+
+  const resetStudiedWords = () => {
+    setStudiedWordsInSession(new Set());
   };
 
   const formatTime = (seconds: number) => {
@@ -382,28 +412,71 @@ export default function StudyPage() {
                       <RotateCcw className="h-4 w-4 mr-2" />
                       Shuffle: {settings.shuffleWords ? 'ON' : 'OFF'}
                     </Button>
+
+                    <Button
+                      variant={settings.uniqueWordsMode ? "default" : "outline"}
+                      onClick={() => setSettings(prev => ({ ...prev, uniqueWordsMode: !prev.uniqueWordsMode }))}
+                      className={settings.uniqueWordsMode 
+                        ? "bg-orange-600 hover:bg-orange-700" 
+                        : "border-gray-700 text-gray-300 hover:bg-gray-800"
+                      }
+                    >
+                      <Target className="h-4 w-4 mr-2" />
+                      Unique Words: {settings.uniqueWordsMode ? 'ON' : 'OFF'}
+                    </Button>
                   </div>
+
+                  {settings.uniqueWordsMode && studiedWordsInSession.size > 0 && (
+                    <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-orange-400">Session Progress</p>
+                          <p className="text-sm text-orange-300">
+                            {studiedWordsInSession.size} words studied • {availableWords.length} remaining
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={resetStudiedWords}
+                          className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                        >
+                          Reset Progress
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="pt-4 border-t border-gray-700">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <p className="font-semibold">Ready to Start</p>
                         <p className="text-sm text-gray-400">
-                          {Math.min(settings.wordsPerSession, words.length)} words • {formatTime(settings.wordsPerSession * settings.timePerWord)} estimated
+                          {Math.min(settings.wordsPerSession, availableWords.length)} words • {formatTime(Math.min(settings.wordsPerSession, availableWords.length) * settings.timePerWord)} estimated
                         </p>
                       </div>
-                      <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/30">
-                        {words.length} words available
-                      </Badge>
+                      <div className="text-right">
+                        <Badge className="bg-blue-600/20 text-blue-400 border-blue-600/30 mb-1">
+                          {availableWords.length} available
+                        </Badge>
+                        {settings.uniqueWordsMode && studiedWordsInSession.size > 0 && (
+                          <Badge className="bg-orange-600/20 text-orange-400 border-orange-600/30 block">
+                            {studiedWordsInSession.size} studied
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     
                     <Button 
                       onClick={startSession}
-                      disabled={words.length === 0}
+                      disabled={availableWords.length === 0}
                       className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-medium"
                     >
                       <Play className="h-4 w-4 mr-2" />
-                      Start Study Session
+                      {availableWords.length === 0 && settings.uniqueWordsMode 
+                        ? 'All Words Studied - Reset to Continue' 
+                        : 'Start Study Session'
+                      }
                     </Button>
                   </div>
                 </CardContent>
@@ -534,6 +607,16 @@ export default function StudyPage() {
                   <RotateCcw className="h-4 w-4 mr-2" />
                   New Session
                 </Button>
+                {settings.uniqueWordsMode && (
+                  <Button
+                    onClick={resetStudiedWords}
+                    variant="outline"
+                    className="border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                  >
+                    <Target className="h-4 w-4 mr-2" />
+                    Reset All Progress
+                  </Button>
+                )}
                 <Link href="/">
                   <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800">
                     <BookOpen className="h-4 w-4 mr-2" />
