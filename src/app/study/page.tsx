@@ -126,7 +126,6 @@ export default function StudyPage() {
     loadData();
   }, [user]);
 
-  // Update available words whenever the full list or studied list changes
   useEffect(() => {
     if (settings.uniqueWordsMode) {
       const remaining = allWords.filter((word) => !studiedWords.has(word.id));
