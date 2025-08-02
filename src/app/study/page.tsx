@@ -80,7 +80,7 @@ export default function StudyPage() {
   const [timeLeft, setTimeLeft] = useState(0);
 
   const [settings, setSettings] = useState<StudySettings>({
-    wordsPerSession: 25,
+    wordsPerSession: 50,
     timePerWord: 30,
     autoAdvance: true,
     shuffleWords: true,
@@ -322,7 +322,7 @@ export default function StudyPage() {
                       Words per Session
                     </label>
                     <div className="grid grid-cols-4 gap-2">
-                      {[10, 25, 50, 100].map((num) => (
+                      {[50, 100, 150, 200].map((num) => (
                         <Button
                           key={num}
                           variant={
